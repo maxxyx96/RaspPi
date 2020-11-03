@@ -220,19 +220,20 @@ def main():
 
     print('Connecting to sensortag...')
     tag = SensorTag(macAddress)
-
+    print("connected.")
     tag.accelerometer.enable()
     # tag.magnetometer.enable()
     tag.gyroscope.enable()
 
     time.sleep(1.0)  # Loading sensors
+    count = 0;
     while True:
         accel = tag.accelerometer.read()
         gyro = tag.gyroscope.read()
-        while tag.gyroscope.read() == gyro or tag.accelerometer.read() == accel:
-            continue  # loop until latest change detected
-        print(accel)
-        print(gyro)
+        count += 1
+        print("accel " +str(count) + ": " + str(accel))
+        print("gyro " + str(count) + ": " + str(gyro))
+
     # print("Battery: ", tag.battery.read())
 
 
