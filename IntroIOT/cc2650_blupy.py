@@ -1,8 +1,10 @@
 from bluepy.btle import UUID, Peripheral, AssignedNumbers
 import struct
 
+
 def _TI_UUID(val):
-    return UUID("%08X-0451-4000-b000-000000000000" % (0xF0000000+val))
+    return UUID("%08X-0451-4000-b000-000000000000" % (0xF0000000 + val))
+
 
 # Sensortag versions
 AUTODETECT = "-"
@@ -10,9 +12,10 @@ SENSORTAG_V1 = "v1"
 SENSORTAG_2650 = "CC2650"
 macAddress = "54:6C:0E:52:EF:89"
 
+
 class SensorBase:
     # Derived classes should set: svcUUID, ctrlUUID, dataUUID
-    sensorOn  = struct.pack("B", 0x01)
+    sensorOn = struct.pack("B", 0x01)
     sensorOff = struct.pack("B", 0x00)
 
     def __init__(self, periph):
@@ -25,11 +28,11 @@ class SensorBase:
         if self.service is None:
             self.service = self.periph.getServiceByUUID(self.svcUUID)
         if self.ctrl is None:
-            self.ctrl = self.service.getCharacteristics(self.ctrlUUID) [0]
+            self.ctrl = self.service.getCharacteristics(self.ctrlUUID)[0]
         if self.data is None:
-            self.data = self.service.getCharacteristics(self.dataUUID) [0]
+            self.data = self.service.getCharacteristics(self.dataUUID)[0]
         if self.sensorOn is not None:
-            self.ctrl.write(self.sensorOn,withResponse=True)
+            self.ctrl.write(self.sensorOn, withResponse=True)
 
     def read(self):
         return self.data.read()
@@ -40,8 +43,9 @@ class SensorBase:
 
     # Derived class should implement _formatData()
 
+
 class AccelerometerSensor(SensorBase):
-    svcUUID  = _TI_UUID(0xAA10)
+    svcUUID = _TI_UUID(0xAA10)
     dataUUID = _TI_UUID(0xAA11)
     ctrlUUID = _TI_UUID(0xAA12)
 
@@ -55,19 +59,20 @@ class AccelerometerSensor(SensorBase):
     def read(self):
         '''Returns (x_accel, y_accel, z_accel) in units of g'''
         x_y_z = struct.unpack('bbb', self.data.read())
-        return tuple([ (val/self.scale) for val in x_y_z ])
+        return tuple([(val / self.scale) for val in x_y_z])
+
 
 class MovementSensorMPU9250(SensorBase):
-    svcUUID  = _TI_UUID(0xAA80)
+    svcUUID = _TI_UUID(0xAA80)
     dataUUID = _TI_UUID(0xAA81)
     ctrlUUID = _TI_UUID(0xAA82)
     sensorOn = None
-    GYRO_XYZ =  7
+    GYRO_XYZ = 7
     ACCEL_XYZ = 7 << 3
     MAG_XYZ = 1 << 6
-    ACCEL_RANGE_2G  = 0 << 8
-    ACCEL_RANGE_4G  = 1 << 8
-    ACCEL_RANGE_8G  = 2 << 8
+    ACCEL_RANGE_2G = 0 << 8
+    ACCEL_RANGE_4G = 1 << 8
+    ACCEL_RANGE_8G = 2 << 8
     ACCEL_RANGE_16G = 3 << 8
 
     def __init__(self, periph):
@@ -77,21 +82,22 @@ class MovementSensorMPU9250(SensorBase):
     def enable(self, bits):
         SensorBase.enable(self)
         self.ctrlBits |= bits
-        self.ctrl.write( struct.pack("<H", self.ctrlBits) )
+        self.ctrl.write(struct.pack("<H", self.ctrlBits))
 
     def disable(self, bits):
         self.ctrlBits &= ~bits
-        self.ctrl.write( struct.pack("<H", self.ctrlBits) )
+        self.ctrl.write(struct.pack("<H", self.ctrlBits))
 
     def rawRead(self):
         dval = self.data.read()
         return struct.unpack("<hhhhhhhhh", dval)
 
+
 class AccelerometerSensorMPU9250:
     def __init__(self, sensor_):
         self.sensor = sensor_
         self.bits = self.sensor.ACCEL_XYZ | self.sensor.ACCEL_RANGE_4G
-        self.scale = 8.0/32768.0 # TODO: why not 4.0, as documented?
+        self.scale = 8.0 / 32768.0  # TODO: why not 4.0, as documented?
 
     def enable(self):
         self.sensor.enable(self.bits)
@@ -102,7 +108,8 @@ class AccelerometerSensorMPU9250:
     def read(self):
         '''Returns (x_accel, y_accel, z_accel) in units of g'''
         rawVals = self.sensor.rawRead()[3:6]
-        return tuple([ v*self.scale for v in rawVals ])
+        return tuple([v * self.scale for v in rawVals])
+
 
 # class MagnetometerSensor(SensorBase):
 #     svcUUID  = _TI_UUID(0xAA30)
@@ -136,23 +143,24 @@ class AccelerometerSensorMPU9250:
 #         return tuple([ v*self.scale for v in rawVals ])
 
 class GyroscopeSensor(SensorBase):
-    svcUUID  = _TI_UUID(0xAA50)
+    svcUUID = _TI_UUID(0xAA50)
     dataUUID = _TI_UUID(0xAA51)
     ctrlUUID = _TI_UUID(0xAA52)
-    sensorOn = struct.pack("B",0x07)
+    sensorOn = struct.pack("B", 0x07)
 
     def __init__(self, periph):
-       SensorBase.__init__(self, periph)
+        SensorBase.__init__(self, periph)
 
     def read(self):
         '''Returns (x,y,z) rate in deg/sec'''
         x_y_z = struct.unpack('<hhh', self.data.read())
-        return tuple([ 250.0 * (v/32768.0) for v in x_y_z ])
+        return tuple([250.0 * (v / 32768.0) for v in x_y_z])
+
 
 class GyroscopeSensorMPU9250:
     def __init__(self, sensor_):
         self.sensor = sensor_
-        self.scale = 500.0/65536.0
+        self.scale = 500.0 / 65536.0
 
     def enable(self):
         self.sensor.enable(self.sensor.GYRO_XYZ)
@@ -163,7 +171,7 @@ class GyroscopeSensorMPU9250:
     def read(self):
         '''Returns (x_gyro, y_gyro, z_gyro) in units of degrees/sec'''
         rawVals = self.sensor.rawRead()[0:3]
-        return tuple([ v*self.scale for v in rawVals ])
+        return tuple([v * self.scale for v in rawVals])
 
 # class BatterySensor(SensorBase):
 #     svcUUID  = UUID("0000180f-0000-1000-8000-00805f9b34fb")
@@ -180,9 +188,9 @@ class GyroscopeSensorMPU9250:
 #         return val
 
 class SensorTag(Peripheral):
-    def __init__(self,addr,version=AUTODETECT):
-        Peripheral.__init__(self,addr)
-        if version==AUTODETECT:
+    def __init__(self, addr, version=AUTODETECT):
+        Peripheral.__init__(self, addr)
+        if version == AUTODETECT:
             svcs = self.discoverServices()
             if _TI_UUID(0xAA70) in svcs:
                 version = SENSORTAG_2650
@@ -195,16 +203,17 @@ class SensorTag(Peripheral):
         else:
             self.firmwareVersion = u''
 
-        if version==SENSORTAG_V1:
+        if version == SENSORTAG_V1:
             self.accelerometer = AccelerometerSensor(self)
-            #self.magnetometer = MagnetometerSensor(self)
+            # self.magnetometer = MagnetometerSensor(self)
             self.gyroscope = GyroscopeSensor(self)
-        elif version==SENSORTAG_2650:
+        elif version == SENSORTAG_2650:
             self._mpu9250 = MovementSensorMPU9250(self)
             self.accelerometer = AccelerometerSensorMPU9250(self._mpu9250)
-            #self.magnetometer = MagnetometerSensorMPU9250(self._mpu9250)
+            # self.magnetometer = MagnetometerSensorMPU9250(self._mpu9250)
             self.gyroscope = GyroscopeSensorMPU9250(self._mpu9250)
-            #self.battery = BatterySensor(self)
+            # self.battery = BatterySensor(self)
+
 
 def main():
     import time
@@ -212,21 +221,20 @@ def main():
     print('Connecting to sensortag...')
     tag = SensorTag(macAddress)
 
-
     tag.accelerometer.enable()
-    #tag.magnetometer.enable()
+    # tag.magnetometer.enable()
     tag.gyroscope.enable()
 
-    time.sleep(1.0) #Loading sensors
+    time.sleep(1.0)  # Loading sensors
     while True:
         accel = tag.accelerometer.read()
         gyro = tag.gyroscope.read()
-        # print("Accelerometer: ", tag.accelerometer.read())
-        # print("Magnetometer: ", tag.magnetometer.read())
-        # print("Gyroscope: ", tag.gyroscope.read())
+        while tag.gyroscope.read() == gyro or tag.accelerometer.read() == accel:
+            continue  # loop until latest change detected
         print(accel)
         print(gyro)
-    #print("Battery: ", tag.battery.read())
+    # print("Battery: ", tag.battery.read())
+
 
 if __name__ == "__main__":
     main()
