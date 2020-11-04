@@ -30,12 +30,10 @@ def main():
     client.loop_start()
     count = 0
     while True:
-        if count > 0 and count <= 50:
+        if count > 0 and count <= 1000:
             client.publish(pub_topic, "BF")
-        if count > 50:
+        elif count > 1000 and count <= 2000:
             client.publish(pub_topic, "X")
-        if count > 100:
-            break
         count += 1;
 if __name__ == "__main__":
     main()
