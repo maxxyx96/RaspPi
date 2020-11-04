@@ -25,32 +25,32 @@ def on_message(client, userdata, msg):
         GPIO.output(Motor1B,GPIO.LOW)
         GPIO.output(Motor2A,GPIO.HIGH)
         GPIO.output(Motor2B,GPIO.LOW)
-    if cmd == "LB": #Left backwards
+    elif cmd == "LB": #Left backwards
         GPIO.output(Motor1A,GPIO.LOW)
         GPIO.output(Motor1B,GPIO.LOW)
         GPIO.output(Motor2A,GPIO.LOW)
         GPIO.output(Motor2B,GPIO.HIGH)
-    if cmd == "RF": #Right forwards
+    elif cmd == "RF": #Right forwards
         GPIO.output(Motor1A,GPIO.LOW)
         GPIO.output(Motor1B,GPIO.HIGH)
         GPIO.output(Motor2A,GPIO.LOW)
         GPIO.output(Motor2B,GPIO.LOW)
-    if cmd == "RB": #Right backwards
+    elif cmd == "RB": #Right backwards
         GPIO.output(Motor1A,GPIO.HIGH)
         GPIO.output(Motor1B,GPIO.LOW)
         GPIO.output(Motor2A,GPIO.LOW)
         GPIO.output(Motor2B,GPIO.LOW)
-    if cmd == "BF": #Both forwards
+    elif cmd == "BF": #Both forwards
         GPIO.output(Motor1A, GPIO.HIGH)
         GPIO.output(Motor1B, GPIO.LOW)
         GPIO.output(Motor2A, GPIO.LOW)
         GPIO.output(Motor2B, GPIO.HIGH)
-    if cmd == "BB": #Both backwards
+    elif cmd == "BB": #Both backwards
         GPIO.output(Motor1A, GPIO.LOW)
         GPIO.output(Motor1B, GPIO.HIGH)
         GPIO.output(Motor2A, GPIO.HIGH)
         GPIO.output(Motor2B, GPIO.LOW)
-    if cmd == "X": #Stop
+    else: #Stop
         GPIO.output(Motor1A, GPIO.LOW)
         GPIO.output(Motor1B, GPIO.LOW)
         GPIO.output(Motor2A, GPIO.LOW)
