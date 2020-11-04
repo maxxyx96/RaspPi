@@ -9,7 +9,7 @@ Motor2B = 18
 
 Broker = "localhost"
 sub_topic = "motor/action"    # receive messages on this topic
-
+cmd = ""
 def on_connect(client, userdata, flags, rc):
     print("Connected with result code "+str(rc))
     client.subscribe(sub_topic)
@@ -17,32 +17,40 @@ def on_connect(client, userdata, flags, rc):
 # when receiving a mqtt message do this;
 
 def on_message(client, userdata, msg):
-    cmd = str(msg.payload)
-    print(msg.topic+"" + cmd)
+    cmd = str(msg.payload.decode("utf-8"))
+    print(msg.topic+" "+ cmd)
     #Move motors according to values on message
-    if cmd == "LF":
+    if cmd == "LF": #Left forwards
+        GPIO.output(Motor1A,GPIO.LOW)
+        GPIO.output(Motor1B,GPIO.LOW)
+        GPIO.output(Motor2A,GPIO.HIGH)
+        GPIO.output(Motor2B,GPIO.LOW)
+    if cmd == "LB": #Left backwards
+        GPIO.output(Motor1A,GPIO.LOW)
+        GPIO.output(Motor1B,GPIO.LOW)
+        GPIO.output(Motor2A,GPIO.LOW)
+        GPIO.output(Motor2B,GPIO.HIGH)
+    if cmd == "RF": #Right forwards
+        GPIO.output(Motor1A,GPIO.LOW)
+        GPIO.output(Motor1B,GPIO.HIGH)
+        GPIO.output(Motor2A,GPIO.LOW)
+        GPIO.output(Motor2B,GPIO.LOW)
+    if cmd == "RB": #Right backwards
+        GPIO.output(Motor1A,GPIO.HIGH)
+        GPIO.output(Motor1B,GPIO.LOW)
+        GPIO.output(Motor2A,GPIO.LOW)
+        GPIO.output(Motor2B,GPIO.LOW)
+    if cmd == "BF": #Both forwards
         GPIO.output(Motor1A, GPIO.HIGH)
         GPIO.output(Motor1B, GPIO.LOW)
-    if cmd == "LB":
-        GPIO.output(Motor1A, GPIO.LOW)
-        GPIO.output(Motor1B, GPIO.HIGH)
-    if cmd == "RF":
         GPIO.output(Motor2A, GPIO.LOW)
         GPIO.output(Motor2B, GPIO.HIGH)
-    if cmd == "RB":
-        GPIO.output(Motor2A, GPIO.HIGH)
-        GPIO.output(Motor2B, GPIO.LOW)
-    if cmd == "BF":
-        GPIO.output(Motor1A, GPIO.HIGH)
-        GPIO.output(Motor1B, GPIO.LOW)
-        GPIO.output(Motor2A, GPIO.LOW)
-        GPIO.output(Motor2B, GPIO.HIGH)
-    if cmd == "BB":
+    if cmd == "BB": #Both backwards
         GPIO.output(Motor1A, GPIO.LOW)
         GPIO.output(Motor1B, GPIO.HIGH)
         GPIO.output(Motor2A, GPIO.HIGH)
         GPIO.output(Motor2B, GPIO.LOW)
-    if cmd == "X":
+    if cmd == "X": #Stop
         GPIO.output(Motor1A, GPIO.LOW)
         GPIO.output(Motor1B, GPIO.LOW)
         GPIO.output(Motor2A, GPIO.LOW)
