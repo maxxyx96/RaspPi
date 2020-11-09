@@ -16,7 +16,7 @@ def _TI_UUID(val):
 AUTODETECT = "-"
 SENSORTAG_V1 = "v1"
 SENSORTAG_2650 = "CC2650"
-macAddress = "54:6C:0E:52:F3:D1"
+macAddress = "54:6C:0E:52:EF:89"
 
 
 class SensorBase:
