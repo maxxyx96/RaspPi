@@ -16,7 +16,7 @@ def _TI_UUID(val):
 AUTODETECT = "-"
 SENSORTAG_V1 = "v1"
 SENSORTAG_2650 = "CC2650"
-macAddress = "54:6C:0E:52:EF:89"
+macAddress = "54:6C:0E:52:F3:D1"
 
 
 class SensorBase:
@@ -179,19 +179,19 @@ class GyroscopeSensorMPU9250:
         rawVals = self.sensor.rawRead()[0:3]
         return tuple([v * self.scale for v in rawVals])
 
-# class BatterySensor(SensorBase):
-#     svcUUID  = UUID("0000180f-0000-1000-8000-00805f9b34fb")
-#     dataUUID = UUID("00002a19-0000-1000-8000-00805f9b34fb")
-#     ctrlUUID = None
-#     sensorOn = None
-#
-#     def __init__(self, periph):
-#        SensorBase.__init__(self, periph)
-#
-#     def read(self):
-#         '''Returns the battery level in percent'''
-#         val = ord(self.data.read())
-#         return val
+class BatterySensor(SensorBase):
+    svcUUID  = UUID("0000180f-0000-1000-8000-00805f9b34fb")
+    dataUUID = UUID("00002a19-0000-1000-8000-00805f9b34fb")
+    ctrlUUID = None
+    sensorOn = None
+
+    def __init__(self, periph):
+        SensorBase.__init__(self, periph)
+
+    def read(self):
+        '''Returns the battery level in percent'''
+        val = ord(self.data.read())
+        return val
 
 class SensorTag(Peripheral):
     def __init__(self, addr, version=AUTODETECT):
@@ -218,7 +218,7 @@ class SensorTag(Peripheral):
             self.accelerometer = AccelerometerSensorMPU9250(self._mpu9250)
             # self.magnetometer = MagnetometerSensorMPU9250(self._mpu9250)
             self.gyroscope = GyroscopeSensorMPU9250(self._mpu9250)
-            # self.battery = BatterySensor(self)
+            self.battery = BatterySensor(self)
 
 # when connecting to mqtt do this;
 
@@ -236,6 +236,8 @@ def on_publish(mosq, obj, mid):
     print("mid: " + str(mid))
 
 def main():
+    import sys
+    import argparse
 
     print('Connecting to sensortag...')
     tag = SensorTag(macAddress)
@@ -243,6 +245,14 @@ def main():
     tag.accelerometer.enable()
     # tag.magnetometer.enable()
     tag.gyroscope.enable()
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-P','--battery', action='store_true', default=False)
+    arg = parser.parse_args(sys.argv[1:])
+
+    # Enabling selected sensors
+    if arg.battery:
+        tag.battery.enable()
 
     time.sleep(1.0)  # Loading sensors
     count = 0;
@@ -254,6 +264,11 @@ def main():
     client.connect(Broker, 1883, 60)
     client.loop_start()
 
+    if arg.battery:
+        while True:
+            print("Battery: ", tag.battery.read())
+            client.publish(pub_topic, str(tag.battery.read()))
+
     while True:
         accel = tag.accelerometer.read()
         gyro = tag.gyroscope.read()
@@ -261,7 +276,6 @@ def main():
         print("accel : " + str(accel))
         print("gyro : " + str(gyro))
         client.publish(pub_topic, str(sensor_data))
-    # print("Battery: ", tag.battery.read())
 
 
 if __name__ == "__main__":
