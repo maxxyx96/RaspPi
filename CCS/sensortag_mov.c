@@ -76,7 +76,7 @@
  * CONSTANTS and MACROS
  */
 // How often to perform sensor reads (milliseconds)
-#define SENSOR_DEFAULT_PERIOD     100
+#define SENSOR_DEFAULT_PERIOD     300
 
 // Length of the data for this sensor
 #define SENSOR_DATA_LEN           MOVEMENT_DATA_LEN
