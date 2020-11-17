@@ -85,11 +85,7 @@
 // SensorTag on-board devices
 #include "st_util.h"
 
-#include "sensortag_tmp.h"
-#include "sensortag_hum.h"
-#include "sensortag_bar.h"
 #include "sensortag_mov.h"
-#include "sensortag_opt.h"
 #include "sensortag_keys.h"
 #include "sensortag_io.h"
 #include "sensortag_batt.h"
@@ -106,7 +102,7 @@
  */
 
 // How often to perform periodic event (in milliseconds)
-#define ST_PERIODIC_EVT_PERIOD               1000
+#define ST_PERIODIC_EVT_PERIOD                300
 
 // What is the advertising interval when device is discoverable
 // (units of 625us, 160=100ms)
@@ -292,12 +288,9 @@ static const uint8_t *attDeviceName = devInfoModelNumber;
 // Pins that are actively used by the application
 static PIN_Config SensortagAppPinTable[] =
 {
-//    Board_LED1       | PIN_GPIO_OUTPUT_EN | PIN_GPIO_LOW | PIN_PUSHPULL | PIN_DRVSTR_MAX,     /* LED initially off             */
     Board_LED2       | PIN_GPIO_OUTPUT_EN | PIN_GPIO_LOW | PIN_PUSHPULL | PIN_DRVSTR_MAX,     /* LED initially off             */
     Board_KEY_LEFT   | PIN_INPUT_EN | PIN_PULLUP | PIN_IRQ_BOTHEDGES | PIN_HYSTERESIS,        /* Button is active low          */
     Board_KEY_RIGHT  | PIN_INPUT_EN | PIN_PULLUP | PIN_IRQ_BOTHEDGES | PIN_HYSTERESIS,        /* Button is active low          */
-//    Board_RELAY      | PIN_INPUT_EN | PIN_PULLDOWN | PIN_IRQ_BOTHEDGES | PIN_HYSTERESIS,      /* Relay is active high          */
-//    Board_BUZZER     | PIN_GPIO_OUTPUT_EN | PIN_GPIO_LOW | PIN_PUSHPULL | PIN_DRVSTR_MAX,     /* Buzzer initially off          */
 
     PIN_TERMINATE
 };
@@ -528,11 +521,7 @@ static void SensorTag_init(void)
 #endif
 
   // Sensor modules
-  SensorTagTmp_init();                            // IR temperature sensor
-  SensorTagHum_init();                            // Humidity sensor
-  SensorTagBar_init();                            // Pressure sensor
   SensorTagMov_init();                            // Movement processor
-  SensorTagOpt_init();                            // Optical sensor
 
   // Auxiliary modules
   SensorTagKeys_init();                           // Key and relay handling
@@ -621,7 +610,7 @@ static void SensorTag_taskFxn(UArg a0, UArg a1)
         SensorTagAudio_processEvent();
       }
 #endif
-      SensorTagOpt_processSensorEvent();
+
       SensorTagMov_processSensorEvent();
       SensorTagBatt_processSensorEvent();
     }
@@ -863,24 +852,8 @@ static void SensorTag_processCharValueChangeEvt(uint8_t serviceID,
 {
   switch (serviceID)
   {
-  case SERVICE_ID_TMP:
-    SensorTagTmp_processCharChangeEvt(paramID);
-    break;
-
-  case SERVICE_ID_HUM:
-    SensorTagHum_processCharChangeEvt(paramID);
-    break;
-
-  case SERVICE_ID_BAR:
-    SensorTagBar_processCharChangeEvt(paramID);
-    break;
-
   case SERVICE_ID_MOV:
     SensorTagMov_processCharChangeEvt(paramID);
-    break;
-
-  case SERVICE_ID_OPT:
-    SensorTagOpt_processCharChangeEvt(paramID);
     break;
 
   case SERVICE_ID_IO:
@@ -1004,11 +977,7 @@ static void SensorTag_enqueueMsg(uint8_t event, uint8_t serviceID, uint8_t param
  */
 static void SensorTag_resetAllModules(void)
 {
-//  SensorTagTmp_reset();
-//  SensorTagHum_reset();
-//  SensorTagBar_reset();
   SensorTagMov_reset();
-//  SensorTagOpt_reset();
   SensorTagBatt_reset();
   SensorTagIO_reset();
   SensorTagRegister_reset();
@@ -1039,10 +1008,6 @@ static void SensorTag_callback(PIN_Handle handle, PIN_Id pinId)
     SensorTagKeys_processKeyRight();
     break;
 
-//  case Board_RELAY:
-//    SensorTagKeys_processRelay();
-//    break;
-
   default:
     /* Do nothing */
     break;
@@ -1066,4 +1031,3 @@ void SensorTag_updateAdvertisingData(uint8_t keyStatus)
 
 /*******************************************************************************
 *******************************************************************************/
-
