@@ -55,9 +55,25 @@
 
 // Application
 #include "sensortag.h"
-//#include "sensortag_tmp.h"
-//#include "sensortag_hum.h"
-//#include "sensortag_bar.h"
+
+/* TI-RTOS Header files */
+#include <xdc/std.h>
+#include <xdc/runtime/System.h>
+#include <ti/drivers/PIN.h>
+#include <ti/drivers/I2C.h>
+#include <ti/sysbios/knl/Clock.h>
+#include <ti/sysbios/knl/Task.h>
+#include "Board.h"
+#include "SensorI2C.h"
+#include "SensorMpu9250.h"
+#define TASKSTACKSIZE       2048
+#define TMP007_OBJ_TEMP     0x0003  /* Object Temp Result Register */
+
+//Task Declarations for MPU9250 sensor
+Task_Struct mpuStruct;
+Task_Handle mpuTask;
+Char mpuStack[TASKSTACKSIZE];
+volatile float accelVal = 0;
 
 #ifndef USE_DEFAULT_USER_CFG
 
@@ -67,7 +83,6 @@
 bleUserCfg_t user0Cfg = BLE_USER_CFG;
 
 #endif // USE_DEFAULT_USER_CFG
-
 /*******************************************************************************
  * MACROS
  */
@@ -112,6 +127,48 @@ PIN_Handle radCtrlHandle;
 
 extern void AssertHandler(uint8 assertCause, uint8 assertSubcause);
 
+void readMpu9250(UArg arg0)
+{
+    // config MPU
+    uint16_t rawdata = 0;
+    SensorMpu9250_powerOn();
+    if (!SensorMpu9250_init())
+    {
+        System_printf("SensorMPU9250_ cannot init!\n");
+        return;
+    }
+    SensorMpu9250_accSetRange(ACC_RANGE_2G);
+    SensorMpu9250_enable(9);
+    SensorMpu9250_enableWom(1);
+    if (!SensorMpu9250_test())
+    {
+        System_printf("SensorMPU9250_ did not pass test!\n");
+    }
+
+    // read MPU data
+    while (1)
+    {
+        //CS3237 TODO: add code to read MPU accelermoter data. The API is provided in MPU library code.
+        if (SensorMpu9250_accRead(&rawdata))
+           {
+               // See if conversion is necessary
+               //When still, converted value is around -0.33, goes up to -1 and above when vigorous movement.
+               accelVal = SensorMpu9250_accConvert(rawdata);
+               //Convert negatives to positives, and offset the still position value to get more reliable data.
+               accelVal = (accelVal < 0) ? (-accelVal - 0.33)  : accelVal - 0.33;
+
+               System_printf("SensorMPU9250 Raw value : %d; Converted Value : %f \n", rawdata, accelVal);
+            }
+        else
+            {
+                System_printf("SensorMPU9250_ I2C fault!\n");
+            }
+
+        System_flush();
+        Task_sleep((UInt) arg0);
+    }
+}
+
 /*******************************************************************************
  * @fn          Main
  *
@@ -133,7 +190,6 @@ int main()
   RegisterAssertCback(AssertHandler);
 
   PIN_init(BoardGpioInitTable);
-
 #ifdef CC1350_LAUNCHXL
   // Enable 2.4GHz Radio
   radCtrlHandle = PIN_open(&radCtrlState, radCtrlCfg);
@@ -163,9 +219,19 @@ int main()
   /* Kick off application - Priority 1 */
   SensorTag_createTask();
 
-//  SensorTagTmp_createTask();
-//  SensorTagHum_createTask();
-//  SensorTagBar_createTask();
+  // Initialising Task for MPU9250 Sensor
+  Task_Params mpuParams;
+  Task_Params_init(&mpuParams);
+  mpuParams.stackSize = TASKSTACKSIZE;
+  mpuParams.stack = &mpuStack;
+  mpuParams.arg0 = 5000; // Task_sleep argument
+  Task_construct(&mpuStruct, (Task_FuncPtr)readMpu9250, &mpuParams, NULL);
+
+  // Start task
+  mpuTask = Task_handle(&mpuStruct);
+
+  /* SysMin will only print to the console when you call flush or exit */
+  System_flush();
 
   BIOS_start();     /* enable interrupts and start SYS/BIOS */
 
@@ -279,4 +345,3 @@ static uint8_t rFSwitchNotifyCb(uint8_t eventType, uint32_t *eventArg,
 
 /*******************************************************************************
  */
-
